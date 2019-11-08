@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>EagleServer</AssemblyName>
-    <Version>1.0.0.0</Version>
+    <Version>1.0.0.0-alpha</Version>
     <Authors>John Chavez</Authors>
     <Description>Small basic C# server</Description>
   </PropertyGroup>
