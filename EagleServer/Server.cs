@@ -24,6 +24,8 @@ namespace Eagle {
 
 		private static string _port;
 
+        private static bool _isHttp = false;
+
 		private static bool _stop = false;
 
 		private static Dictionary<string, Func<HttpListenerRequest, HttpListenerResponse, string>> postMappings = new Dictionary<string, Func<HttpListenerRequest, HttpListenerResponse, string>>();
@@ -43,13 +45,31 @@ namespace Eagle {
 
 			listner = new HttpListener();
 
-			if(_port == null || _port.Length == 0){
-            	listner.Prefixes.Add("http://+:8080/");
-			} else {
-				listner.Prefixes.Add("http://+:"+_port+"/");
-			}
-            
-			 listner.Start();
+            if (!_isHttp)
+            {
+                if (_port == null || _port.Length == 0)
+                {
+                    listner.Prefixes.Add("https://+:8080/");
+                }
+                else
+                {
+                    listner.Prefixes.Add("https://+:" + _port + "/");
+                }
+            }
+            else
+            {
+                if (_port == null || _port.Length == 0)
+                {
+                    listner.Prefixes.Add("http://+:8080/");
+                }
+                else
+                {
+                    listner.Prefixes.Add("http://+:" + _port + "/");
+                }
+            }
+
+
+             listner.Start();
 
 			Task.Run( () => {
 				
@@ -81,8 +101,12 @@ namespace Eagle {
                                 body = putMappings[path](ctx.Request, ctx.Response);
                             }
                             reply(ctx.Response, body);
-                        } catch (HttpStatusAwareException ex ) {
+                        }
+                        catch (HttpStatusAwareException ex)
+                        {
                             reply(ctx.Response, ex);
+                        } catch {
+                            reply(ctx.Response, new HttpStatusAwareException(500, "internal server error"));
 						} finally {
 							count++;
 						}
@@ -106,6 +130,11 @@ namespace Eagle {
             _stop = true;
         }
 
+        public static void useHttp(bool use)
+        {
+            _isHttp = use;
+        }
+
         private static void reply(HttpListenerResponse response, string body){
 			
 			byte[] outBuffer = null;
@@ -124,7 +153,7 @@ namespace Eagle {
 
         private static void reply(HttpListenerResponse response, HttpStatusAwareException ex)
         {
-            string body = ex.getBody();
+            string body = ex.Body;
 
             byte[] outBuffer = null;
             if (body != null)
@@ -134,7 +163,7 @@ namespace Eagle {
                 response.OutputStream.Write(outBuffer, 0, outBuffer.Length);
             }
 
-            response.StatusCode = ex.getStatusCode();
+            response.StatusCode = ex.StatusCode;
             response.OutputStream.Flush();
             response.OutputStream.Close();
             response.OutputStream.Dispose();

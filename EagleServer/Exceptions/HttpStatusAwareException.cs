@@ -4,10 +4,18 @@ using System.Text;
 
 namespace EagleServer.Exceptions
 {
-    abstract class HttpStatusAwareException : Exception
+    class HttpStatusAwareException : Exception
     {
-        public abstract int getStatusCode();
 
-        public abstract string getBody();
+        public HttpStatusAwareException(int statusCode, string message)
+        {
+            this.StatusCode = statusCode;
+            this.Body = message;
+        }
+
+        public int StatusCode { get; set; }
+
+        public string Body { get; set; }
+
     }
 }
