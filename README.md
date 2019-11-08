@@ -5,7 +5,7 @@ https://github.com/jchavez-bw/eagle-server
 C# Lightweight  server
 
 
-## Suggested Import (using)
+## Suggested Import (using static)
 ```csharp
 using static Eagle.Server;
 ```
@@ -45,8 +45,8 @@ post("/incoming/request", (request, response) => {
     return foo(); //Return a string
 }
 ```
-The status code will be returned and the message in the exception will be sent as the body.
-The HttpStatusAwareException is an exception actively  caught and handled. 
+The status code in the exception and the message in the exception will be used as the response status code and the response body.
+The HttpStatusAwareException is an exception actively caught and handled. 
 If an uncaught exception is thrown within a reply function, the server will catch it and convert it to `new HttpStatusAwareException(500, "internal server error")`
 
 ## Headers & etc...
