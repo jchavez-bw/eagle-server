@@ -1,13 +1,18 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>EagleServer</AssemblyName>
-    <Version>1.0.0.0</Version>
+    <Version>1.0.0.1</Version>
     <Authors>John Chavez</Authors>
     <Description>Small basic C# server</Description>
     <RepositoryUrl>https://github.com/jchavez-bw/eagle-server</RepositoryUrl> 
     <RepositoryType>git</RepositoryType> 
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CSharp" Version="4.6.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
 
 </Project>
