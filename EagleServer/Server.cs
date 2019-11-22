@@ -195,13 +195,13 @@ namespace Eagle {
         private static void reply(HttpListenerResponse response, string body){
 			
 			byte[] outBuffer = null;
-			if(body != null){
+            response.StatusCode = 200;
+            if (body != null){
 				outBuffer = Encoding.ASCII.GetBytes(body);
 				response.ContentLength64 = outBuffer.Length;
 				response.OutputStream.Write(outBuffer, 0, outBuffer.Length);
 			}
 
-            response.StatusCode = 200;           
             response.OutputStream.Flush();
             response.OutputStream.Close();
             response.OutputStream.Dispose();
@@ -211,7 +211,7 @@ namespace Eagle {
         private static void reply(HttpListenerResponse response, HttpStatusAwareException ex)
         {
             string body = ex.Body;
-
+            response.StatusCode = ex.StatusCode;
             byte[] outBuffer = null;
             if (body != null)
             {
@@ -220,7 +220,7 @@ namespace Eagle {
                 response.OutputStream.Write(outBuffer, 0, outBuffer.Length);
             }
 
-            response.StatusCode = ex.StatusCode;
+            
             response.OutputStream.Flush();
             response.OutputStream.Close();
             response.OutputStream.Dispose();
@@ -399,6 +399,21 @@ namespace Eagle {
             if (json == null || json == "") json = "{}";
 
             return JObject.Parse(json);
+        }
+
+        public class HttpStatusAwareException : Exception
+        {
+
+            public HttpStatusAwareException(int statusCode, string message)
+            {
+                this.StatusCode = statusCode;
+                this.Body = message;
+            }
+
+            public int StatusCode { get; set; }
+
+            public string Body { get; set; }
+
         }
     }
 }

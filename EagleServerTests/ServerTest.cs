@@ -1,3 +1,4 @@
+
 using NUnit.Framework;
 using System.IO;
 using System.Net;
@@ -46,6 +47,14 @@ namespace Tests
 
                 return "Shuting down server";
             });
+
+            post("/error", (dynamic body, HttpListenerResponse response) => {
+
+                throw new HttpStatusAwareException(401, "access denied");
+
+
+                return "Should not be here";
+            });
         }
 
         /*
@@ -73,12 +82,12 @@ namespace Tests
         public async Task StopServerTest()
         {
 
-            //stop();
-
             WaitOnServerToStop();
 
             Assert.Pass();
 
         }
+
+        
     }
 }
