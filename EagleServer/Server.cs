@@ -166,7 +166,6 @@ namespace Eagle {
             catch (Exception ex)
             {
                 reply(ctx.Response, new HttpStatusAwareException(500, "internal server error"));
-                throw ex;
             }
             finally
             {
