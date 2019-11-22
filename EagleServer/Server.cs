@@ -31,7 +31,7 @@ namespace Eagle {
 
         private static Task MainLoop = null;
 
-		private static Dictionary<string,object> postMappings = new Dictionary<string, object>();
+		private static Dictionary<string, object> postMappings = new Dictionary<string, object>();
 
 		private static Dictionary<string, object> getMappings = new Dictionary<string, object>();
 
@@ -380,6 +380,8 @@ namespace Eagle {
         {
 
             string json = getBody(request);
+
+            if (json == null || json == "") json = "{}";
 
             return JObject.Parse(json);
         }
