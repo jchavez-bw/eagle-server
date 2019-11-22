@@ -40,6 +40,8 @@ namespace Eagle {
         private static Dictionary<string, object> deleteMappings = new Dictionary<string, object>();
 
 
+        private static IAsyncResult res;
+
         private Server(){
 
 			 if (!HttpListener.IsSupported)
@@ -86,76 +88,90 @@ namespace Eagle {
 
                 HashSet<Task> runningTasks = new HashSet<Task>();
 				
-				int count = 0;
 				while (!_stop)
 				{
-					HttpListenerContext task = listner.GetContext();
+
+					res = listner.BeginGetContext(ListenerCallback, listner);
+                    res.AsyncWaitHandle.WaitOne(5000);
 					
-					Task respondTask = new Task (() => {
-
-                        HttpListenerContext ctx = task;
-
-                        object func = null;
-                        try
-                        {
-                            string path = ctx.Request.RawUrl;
-                            string body = null;
-                            if ("POST".Equals(ctx.Request.HttpMethod) && postMappings.ContainsKey(path))
-                            {
-                                func = postMappings[path];                                
-                            }
-                            else if ("GET".Equals(ctx.Request.HttpMethod) && getMappings.ContainsKey(path))
-                            {
-                                 func = getMappings[path];
-                            }
-                            else if ("DELETE".Equals(ctx.Request.HttpMethod) && getMappings.ContainsKey(path))
-                            {
-                                 func = deleteMappings[path];
-
-                            }
-                            else if ("PUT".Equals(ctx.Request.HttpMethod) && getMappings.ContainsKey(path))
-                            {
-                               func = putMappings[path];
-
-                            }
-
-                            if(func == null)
-                            {
-                                throw new HttpStatusAwareException(404, "Not Found");
-                            }
-
-                            if (func is Func<dynamic, HttpListenerResponse, string>)
-                            {
-                                body = ((Func<dynamic, HttpListenerResponse, string>)func)(getJsonObj(ctx.Request), ctx.Response);
-                            }
-                            else
-                            {
-                                body = ((Func<HttpListenerRequest, HttpListenerResponse, string>)func)(ctx.Request, ctx.Response);
-                            }
-                            reply(ctx.Response, body);
-                        }
-                        catch (HttpStatusAwareException ex)
-                        {
-                            reply(ctx.Response, ex);
-                        } catch (Exception ex) {
-                            reply(ctx.Response, new HttpStatusAwareException(500, "internal server error"));
-                            throw ex;
-						} finally {
-							count++;
-						}
-					} );
-
-                    respondTask.Start();
                 }
 
                 //Task.WhenAll(runningTasks).Wait();
 
-				listner.Stop();
+                if(listner.IsListening)
+				    listner.Stop();
 
 				listner.Close();
 			});
 
 		}
+
+        public static void ListenerCallback(IAsyncResult result)
+        {
+            HttpListener listener = (HttpListener)result.AsyncState;
+            // Use EndGetContext to complete the asynchronous operation.
+            
+            HttpListenerContext ctx;
+            try
+            {
+                ctx = listener.EndGetContext(result);
+            } catch (ObjectDisposedException ex)
+            {
+                return;
+            }
+
+            object func = null;
+            try
+            {
+                string path = ctx.Request.RawUrl;
+                string body = null;
+                if ("POST".Equals(ctx.Request.HttpMethod) && postMappings.ContainsKey(path))
+                {
+                    func = postMappings[path];
+                }
+                else if ("GET".Equals(ctx.Request.HttpMethod) && getMappings.ContainsKey(path))
+                {
+                    func = getMappings[path];
+                }
+                else if ("DELETE".Equals(ctx.Request.HttpMethod) && getMappings.ContainsKey(path))
+                {
+                    func = deleteMappings[path];
+
+                }
+                else if ("PUT".Equals(ctx.Request.HttpMethod) && getMappings.ContainsKey(path))
+                {
+                    func = putMappings[path];
+
+                }
+
+                if (func == null)
+                {
+                    throw new HttpStatusAwareException(404, "Not Found");
+                }
+
+                if (func is Func<dynamic, HttpListenerResponse, string>)
+                {
+                    body = ((Func<dynamic, HttpListenerResponse, string>)func)(getJsonObj(ctx.Request), ctx.Response);
+                }
+                else
+                {
+                    body = ((Func<HttpListenerRequest, HttpListenerResponse, string>)func)(ctx.Request, ctx.Response);
+                }
+                reply(ctx.Response, body);
+            }
+            catch (HttpStatusAwareException ex)
+            {
+                reply(ctx.Response, ex);
+            }
+            catch (Exception ex)
+            {
+                reply(ctx.Response, new HttpStatusAwareException(500, "internal server error"));
+                throw ex;
+            }
+            finally
+            {
+            }
+        }
 
         public static bool isRunning()
         {

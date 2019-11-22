@@ -2,6 +2,7 @@ using NUnit.Framework;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using static Eagle.Server;
 using static System.Console;
@@ -18,9 +19,11 @@ namespace Tests
             useHttp(true);
             startServerInstance();
 
+            int count = 0;
             post("/", (HttpListenerRequest request, HttpListenerResponse response) => {
-                
-                return "";
+
+                count++;
+                return "" + count;
 
             });
 
@@ -32,8 +35,20 @@ namespace Tests
                 
                 return "";
             });
+
+            post("/stop", (dynamic body, HttpListenerResponse response) => {
+
+                Task.Run(() => {
+                    Thread.Sleep(2000);
+                    stop();
+                });
+                
+
+                return "Shuting down server";
+            });
         }
 
+        /*
         [Test]
         public async Task Test1()
         {
@@ -51,6 +66,19 @@ namespace Tests
 
             Assert.Pass();
             
+        }
+        */
+
+        [Test]
+        public async Task StopServerTest()
+        {
+
+            //stop();
+
+            WaitOnServerToStop();
+
+            Assert.Pass();
+
         }
     }
 }
