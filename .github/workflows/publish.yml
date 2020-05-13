@@ -16,8 +16,8 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 2.2.401
-    - name: cd EagleServer && Build with dotnet
-      run: dotnet build --configuration Release
+    - name: Build with dotnet
+      run: cd EagleServer && dotnet build --configuration Release
       shell: cmd
     - name: Pack
       run: cd EagleServer && dotnet pack
