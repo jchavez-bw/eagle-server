@@ -23,7 +23,7 @@ jobs:
       run: cd EagleServer && dotnet pack
       shell: cmd
     - name: Push to Nuget with dotnet
-      run: dotnet nuget push .\EagleServer\bin\Debug\EagleServer.*.nupkg -s nuget.org -k %NUGET_KEY% -n
+      run: dotnet nuget push .\EagleServer\bin\Debug\EagleServer.*.nupkg -s nuget.org -k %NUGET_KEY% -n true
       shell: cmd
       env:
         NUGET_KEY: ${{ secrets.NUGET_KEY }}
