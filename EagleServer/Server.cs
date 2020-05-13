@@ -1,14 +1,14 @@
 
-using System.Threading;
 using System.Collections.Generic;
 using System.Text;
 using System;
 using System.Threading.Tasks;
 using System.Net;
-using Newtonsoft.Json;
 
 using EagleServer.Exceptions;
 using Newtonsoft.Json.Linq;
+using EagleServer.Helpers;
+using static EagleServer.Helpers.PathTree;
 
 namespace Eagle {
 
@@ -123,7 +123,10 @@ namespace Eagle {
             object func = null;
             try
             {
-                string path = ctx.Request.RawUrl;
+                string rawPath = ctx.Request.RawUrl;
+
+                var pathInfo = PathTree.getPath(rawPath);
+                var path = pathInfo.variableUrl;
                 string body = null;
                 if ("POST".Equals(ctx.Request.HttpMethod) && postMappings.ContainsKey(path))
                 {
@@ -149,9 +152,15 @@ namespace Eagle {
                     throw new HttpStatusAwareException(404, "Not Found");
                 }
 
-                if (func is Func<dynamic, HttpListenerResponse, string>)
+                if (func is Func<EagleRequest, HttpListenerResponse, string>)
                 {
-                    body = ((Func<dynamic, HttpListenerResponse, string>)func)(getJsonObj(ctx.Request), ctx.Response);
+                    var request = new EagleRequest
+                    {
+                        Body = getJsonObj(ctx.Request),
+                        PathInfo = pathInfo,
+                        RawRequest = ctx.Request
+                    };
+                    body = ((Func<EagleRequest, HttpListenerResponse, string>)func)(request, ctx.Response);
                 }
                 else
                 {
@@ -263,7 +272,9 @@ namespace Eagle {
                 throw new ServerNotStartedException();
 
             if (path != null && path.Length != 0)
-				postMappings[path] = (object)func;
+            {
+                postMappings[PathTree.addPath(path)] = (object)func;
+            }
 			
 		}
 
@@ -273,14 +284,16 @@ namespace Eagle {
         /// </summary>
         /// <param name="path"></param>
         /// <param name="func"></param>
-        public static void post(string path, Func<dynamic, HttpListenerResponse, string> func)
+        public static void post(string path, Func<EagleRequest, HttpListenerResponse, string> func)
         {
 
             if (server == null)
                 throw new ServerNotStartedException();
 
             if (path != null && path.Length != 0)
-                postMappings[path] = (object)func;
+            {
+                postMappings[PathTree.addPath(path)] = (object)func;
+            }
 
         }
 
@@ -295,7 +308,7 @@ namespace Eagle {
                 throw new ServerNotStartedException();
 
             if (path != null && path.Length != 0)
-				getMappings[path] = (object)func;
+				getMappings[PathTree.addPath(path)] = (object)func;
 			
 		}
 
@@ -305,14 +318,14 @@ namespace Eagle {
         /// </summary>
         /// <param name="path"></param>
         /// <param name="func"></param>
-        public static void get(string path, Func<dynamic, HttpListenerResponse, string> func)
+        public static void get(string path, Func<EagleRequest, HttpListenerResponse, string> func)
         {
 
             if (server == null)
                 throw new ServerNotStartedException();
 
             if (path != null && path.Length != 0)
-                getMappings[path] = (object)func;
+                getMappings[PathTree.addPath(path)] = (object)func;
 
         }
 
@@ -328,7 +341,7 @@ namespace Eagle {
                 throw new ServerNotStartedException();
 
             if (path != null && path.Length != 0)
-                putMappings[path] = (object)func;
+                putMappings[PathTree.addPath(path)] = (object)func;
 
         }
 
@@ -338,14 +351,14 @@ namespace Eagle {
         /// </summary>
         /// <param name="path"></param>
         /// <param name="func"></param>
-        public static void put(string path, Func<dynamic, HttpListenerResponse, string> func)
+        public static void put(string path, Func<EagleRequest, HttpListenerResponse, string> func)
         {
 
             if (server == null)
                 throw new ServerNotStartedException();
 
             if (path != null && path.Length != 0)
-                putMappings[path] = (object)func;
+                putMappings[PathTree.addPath(path)] = (object)func;
 
         }
 
@@ -361,7 +374,7 @@ namespace Eagle {
                 throw new ServerNotStartedException();
 
             if (path != null && path.Length != 0)
-                deleteMappings[path] = (object)func;
+                deleteMappings[PathTree.addPath(path)] = (object)func;
 
         }
 
@@ -371,17 +384,33 @@ namespace Eagle {
         /// </summary>
         /// <param name="path"></param>
         /// <param name="func"></param>
-        public static void delete(string path, Func<dynamic, HttpListenerResponse, string> func)
+        public static void delete(string path, Func<EagleRequest, HttpListenerResponse, string> func)
         {
 
             if (server == null)
                 throw new ServerNotStartedException();
 
             if (path != null && path.Length != 0)
-                deleteMappings[path] = (object)func;
+                deleteMappings[PathTree.addPath(path)] = (object)func;
 
         }
 
+
+        public static string getVariablePath( string path )
+        {
+            var parts = path.Split('/');
+
+            for(int i = 0; i < parts.Length; i++)
+            {
+                var part = parts[i];
+                if(parts != null && part.StartsWith("{") && part.EndsWith("}") )
+                {
+                    parts[i] = "*";
+                }
+            }
+
+            return string.Join("/", parts);
+        }
         public static string getBody(HttpListenerRequest request)
         {
             byte[] buffer = new byte[request.ContentLength64];
@@ -398,22 +427,21 @@ namespace Eagle {
 
             if (json == null || json == "") json = "{}";
 
+            json = json.Trim();
+
+            if (json.StartsWith("["))
+                return JArray.Parse(json);
+
             return JObject.Parse(json);
         }
 
-        public class HttpStatusAwareException : Exception
+        public class EagleRequest
         {
+            public PathInfo PathInfo { get; set; }
 
-            public HttpStatusAwareException(int statusCode, string message)
-            {
-                this.StatusCode = statusCode;
-                this.Body = message;
-            }
+            public dynamic Body { get; set; }
 
-            public int StatusCode { get; set; }
-
-            public string Body { get; set; }
-
+            public HttpListenerRequest RawRequest { get; set; }
         }
     }
 }
