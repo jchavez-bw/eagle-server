@@ -4,14 +4,16 @@ on: pull_request
 
 jobs:
   build:
+    name: Build Project
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v1
+    - name: Checkout code into VM
+      uses: actions/checkout@v1
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 2.2.401
-      - name: Build with dotnet
-        run: dotnet build --configuration Release
-      - name: Pack
-        run: dotnet pack 
+    - name: Build with dotnet
+      run: dotnet build --configuration Release
+    - name: Pack
+      run: dotnet pack 
