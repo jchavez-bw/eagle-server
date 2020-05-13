@@ -64,7 +64,7 @@ namespace EagleServer.Helpers
 
         public static PathInfo getPath(string path)
         {
-            if (path == "/") return new PathInfo { RawUrl = "/", variableUrl = "/" };
+            if (path == "/") return new PathInfo { RawPath = "/", VariablePath = "/" };
 
             if (!path.StartsWith("/"))
             {
@@ -103,8 +103,8 @@ namespace EagleServer.Helpers
 
 
             var pathInfo = new PathInfo(node.PathParameters, pathParameters);
-            pathInfo.RawUrl = path;
-            pathInfo.variableUrl = string.Join("/", parts);
+            pathInfo.RawPath = path;
+            pathInfo.VariablePath = string.Join("/", parts);
 
             return pathInfo;
         }
@@ -146,9 +146,9 @@ namespace EagleServer.Helpers
         {
             public dynamic PathParameters { get; set; }
 
-            public string RawUrl { get; set; }
+            public string RawPath { get; set; }
 
-            public string variableUrl { get; set; }
+            public string VariablePath { get; set; }
 
             public PathInfo() { }
 
