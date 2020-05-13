@@ -14,7 +14,7 @@ jobs:
       with:
         dotnet-version: 2.2.401
     - name: Where are we
-      run: ls -la
+      run: dir /B
     - name: Build with dotnet
       run: dotnet build --configuration Release
     - name: Pack
