@@ -1,0 +1,21 @@
+name: Build
+
+on: pull_request
+
+jobs:
+  build:
+    name: Build Project
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code into VM
+      uses: actions/checkout@v1
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 2.2.401
+    - name: Build with dotnet
+      run: cd EagleServer && dotnet build --configuration Release
+      shell: cmd
+    - name: Pack
+      run: cd EagleServer && dotnet pack
+      shell: cmd

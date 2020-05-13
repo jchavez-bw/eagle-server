@@ -5,6 +5,35 @@ https://github.com/jchavez-bw/eagle-server
 C# Lightweight  server
 
 
+## Version 2.0.0
+
+Path parameter support was added in version 2.0.0 and the request object now has a different form of 
+
+```csharp
+public class EagleRequest
+{
+    public PathInfo PathInfo { get; set; }
+
+    public dynamic Body { get; set; }
+
+    public HttpListenerRequest RawRequest { get; set; }
+}
+```
+
+with `PathInfo` defined as 
+
+```csharp
+public class PathInfo
+{
+    public dynamic PathParameters { get; set; }
+
+    public string RawUrl { get; set; }
+
+    public string variableUrl { get; set; }
+}
+```
+
+
 ## Suggested Import (using static)
 ```csharp
 using static Eagle.Server;
@@ -29,6 +58,25 @@ post("/incoming/request", (request, response) => {
 }
 ```
 *Note: if no error is thrown and "return" is hit then the http status code will be 200 
+
+### Path Paramaters ( version > 2.0.0 )
+```csharp
+post("/account/{accountId}", (request, response) => {
+
+    var pathParameters = request.PathInfo.PathParameters;
+    var body = request.Body;
+
+    // this is for JSON body only.  requst body was { "test" : "value here" }
+    string test = body.test;
+
+    //Dynamic object accountId must match exactly the string between the {} ex: {accountId} 
+    string accountId = pathParameters.accountId;
+
+    WriteLine($"accountId = {accountId} and test = {test}");
+
+    return "";
+});
+```
 
 ## Supported Methods
 * POST
