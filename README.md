@@ -13,6 +13,8 @@ Path parameter support was added in version 2.0.0 and the request object now has
 public class EagleRequest
 {
     public PathInfo PathInfo { get; set; }
+    
+    public NameValueCollection QueryParams { get; set; }
 
     public dynamic Body { get; set; }
 
@@ -27,9 +29,9 @@ public class PathInfo
 {
     public dynamic PathParameters { get; set; }
 
-    public string RawUrl { get; set; }
+    public string RawPath { get; set; }
 
-    public string variableUrl { get; set; }
+    public string VariablePath { get; set; }
 }
 ```
 

@@ -50,6 +50,8 @@ namespace Tests
 
                 string accountId = pathParameters.accountId;
 
+                string taco = request.QueryParams.Get("taco");
+
                 WriteLine($"accountId = {accountId}");
 
                 return "";
@@ -57,7 +59,7 @@ namespace Tests
 
             post("/dynamic", (request, response) => {
 
-                var test = request.PathInfo.variableUrl;
+                var test = request.PathInfo.VariablePath;
 
                 WriteLine(test);
                 
@@ -92,6 +94,8 @@ namespace Tests
             var content = new StringContent("{\"test\": 0 }");
 
             var response = await client.PostAsync("http://localhost:8080/account/123456", content);
+
+            response = await client.GetAsync("http://localhost:8080/account/123456?test=fish&taco=tuesday");
 
             response = await client.GetAsync("http://localhost:8080/account/123456");
 

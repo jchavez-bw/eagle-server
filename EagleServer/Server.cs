@@ -9,6 +9,7 @@ using EagleServer.Exceptions;
 using Newtonsoft.Json.Linq;
 using EagleServer.Helpers;
 using static EagleServer.Helpers.PathTree;
+using System.Collections.Specialized;
 
 namespace Eagle {
 
@@ -124,9 +125,13 @@ namespace Eagle {
             try
             {
                 string rawPath = ctx.Request.RawUrl;
-
+                if( rawPath.Contains("?") )
+                {
+                    rawPath = rawPath.Substring(0, rawPath.IndexOf("?"));
+                }
+                
                 var pathInfo = PathTree.getPath(rawPath);
-                var path = pathInfo.variableUrl;
+                var path = pathInfo.VariablePath;
                 string body = null;
                 if ("POST".Equals(ctx.Request.HttpMethod) && postMappings.ContainsKey(path))
                 {
@@ -158,7 +163,8 @@ namespace Eagle {
                     {
                         Body = getJsonObj(ctx.Request),
                         PathInfo = pathInfo,
-                        RawRequest = ctx.Request
+                        RawRequest = ctx.Request,
+                        QueryParams = ctx.Request.QueryString
                     };
                     body = ((Func<EagleRequest, HttpListenerResponse, string>)func)(request, ctx.Response);
                 }
@@ -439,9 +445,12 @@ namespace Eagle {
         {
             public PathInfo PathInfo { get; set; }
 
+            public NameValueCollection QueryParams { get; set; }
+
             public dynamic Body { get; set; }
 
             public HttpListenerRequest RawRequest { get; set; }
+
         }
     }
 }
