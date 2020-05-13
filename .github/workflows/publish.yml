@@ -16,20 +16,11 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 2.2.401
-    - name: Move into Project
-      run: cd EagleServer
-      shell: cmd
-    - name: Get Current Directory
-      run: cd
-      shell: cmd
-    - name: View Current Directory
-      run: dir /B
-      shell: cmd
-    - name: Build with dotnet
+    - name: cd EagleServer && Build with dotnet
       run: dotnet build --configuration Release
       shell: cmd
     - name: Pack
-      run: dotnet pack
+      run: cd EagleServer && dotnet pack
       shell: cmd
     - name: Push to Nuget with dotnet
       run: dotnet nuget push .\EagleServer\bin\Debug\EagleServer.*.nupkg -s nuget.org -k %NUGET_KEY%
