@@ -13,8 +13,8 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 2.2.401
-    - name: Where are we
-      run: dir /B
+    - name: Move into Project
+      run: cd EagleServer
       shell: cmd
     - name: Build with dotnet
       run: dotnet build --configuration Release
