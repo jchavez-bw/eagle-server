@@ -141,12 +141,12 @@ namespace Eagle {
                 {
                     func = getMappings[path];
                 }
-                else if ("DELETE".Equals(ctx.Request.HttpMethod) && getMappings.ContainsKey(path))
+                else if ("DELETE".Equals(ctx.Request.HttpMethod) && deleteMappings.ContainsKey(path))
                 {
                     func = deleteMappings[path];
 
                 }
-                else if ("PUT".Equals(ctx.Request.HttpMethod) && getMappings.ContainsKey(path))
+                else if ("PUT".Equals(ctx.Request.HttpMethod) && putMappings.ContainsKey(path))
                 {
                     func = putMappings[path];
 
@@ -161,16 +161,37 @@ namespace Eagle {
                 {
                     var request = new EagleRequest
                     {
-                        Body = getJsonObj(ctx.Request),
+                        Body = getBodyDynamic(ctx.Request),
                         PathInfo = pathInfo,
                         RawRequest = ctx.Request,
                         QueryParams = ctx.Request.QueryString
                     };
                     body = ((Func<EagleRequest, HttpListenerResponse, string>)func)(request, ctx.Response);
-                }
-                else
+                } 
+                else if (func is Func<EagleRequest, HttpListenerResponse, object>)
                 {
-                    body = ((Func<HttpListenerRequest, HttpListenerResponse, string>)func)(ctx.Request, ctx.Response);
+                    var request = new EagleRequest
+                    {
+                        Body = getBodyDynamic(ctx.Request),
+                        PathInfo = pathInfo,
+                        RawRequest = ctx.Request,
+                        QueryParams = ctx.Request.QueryString
+                    };
+                    var obj = ((Func<EagleRequest, HttpListenerResponse, object>)func)(request, ctx.Response);
+                    ctx.Response.ContentType = "application/json";
+                    body = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
+                }
+                else if (func is Action<EagleRequest, HttpListenerResponse>)
+                {
+                    var request = new EagleRequest
+                    {
+                        Body = getBodyDynamic(ctx.Request),
+                        PathInfo = pathInfo,
+                        RawRequest = ctx.Request,
+                        QueryParams = ctx.Request.QueryString
+                    };
+                    ((Action<EagleRequest, HttpListenerResponse>)func)(request, ctx.Response);
+                    body = "";
                 }
                 reply(ctx.Response, body);
             }
@@ -227,6 +248,7 @@ namespace Eagle {
         {
             string body = ex.Body;
             response.StatusCode = ex.StatusCode;
+            response.ContentType = ex.ContentType;
             byte[] outBuffer = null;
             if (body != null)
             {
@@ -303,6 +325,30 @@ namespace Eagle {
 
         }
 
+        public static void post(string path, Func<EagleRequest, HttpListenerResponse, object> func)
+        {
+
+            if (server == null)
+                throw new ServerNotStartedException();
+
+            if (path != null && path.Length != 0)
+            {
+                postMappings[PathTree.addPath(path)] = (object)func;
+            }
+
+        }
+        public static void post(string path, Action<EagleRequest, HttpListenerResponse> func)
+        {
+            if (server == null)
+                throw new ServerNotStartedException();
+
+            if (path != null && path.Length != 0)
+            {
+                postMappings[PathTree.addPath(path)] = (object)func;
+            }
+
+        }
+       
         /// <summary>
         /// Sets the path to the function to execute. 
         /// </summary>
@@ -332,6 +378,29 @@ namespace Eagle {
 
             if (path != null && path.Length != 0)
                 getMappings[PathTree.addPath(path)] = (object)func;
+
+        }
+        public static void get(string path, Func<EagleRequest, HttpListenerResponse, object> func)
+        {
+
+            if (server == null)
+                throw new ServerNotStartedException();
+
+            if (path != null && path.Length != 0)
+            {
+                getMappings[PathTree.addPath(path)] = (object)func;
+            }
+
+        }
+        public static void get(string path, Action<EagleRequest, HttpListenerResponse> func)
+        {
+            if (server == null)
+                throw new ServerNotStartedException();
+
+            if (path != null && path.Length != 0)
+            {
+                getMappings[PathTree.addPath(path)] = (object)func;
+            }
 
         }
 
@@ -367,6 +436,29 @@ namespace Eagle {
                 putMappings[PathTree.addPath(path)] = (object)func;
 
         }
+        public static void put(string path, Func<EagleRequest, HttpListenerResponse, object> func)
+        {
+
+            if (server == null)
+                throw new ServerNotStartedException();
+
+            if (path != null && path.Length != 0)
+            {
+                putMappings[PathTree.addPath(path)] = (object)func;
+            }
+
+        }
+        public static void put(string path, Action<EagleRequest, HttpListenerResponse> func)
+        {
+            if (server == null)
+                throw new ServerNotStartedException();
+
+            if (path != null && path.Length != 0)
+            {
+                putMappings[PathTree.addPath(path)] = (object)func;
+            }
+
+        }
 
         /// <summary>
         /// Sets the path to the function to execute. 
@@ -400,7 +492,29 @@ namespace Eagle {
                 deleteMappings[PathTree.addPath(path)] = (object)func;
 
         }
+        public static void delete(string path, Func<EagleRequest, HttpListenerResponse, object> func)
+        {
 
+            if (server == null)
+                throw new ServerNotStartedException();
+
+            if (path != null && path.Length != 0)
+            {
+                deleteMappings[PathTree.addPath(path)] = (object)func;
+            }
+
+        }
+        public static void delete(string path, Action<EagleRequest, HttpListenerResponse> func)
+        {
+            if (server == null)
+                throw new ServerNotStartedException();
+
+            if (path != null && path.Length != 0)
+            {
+                deleteMappings[PathTree.addPath(path)] = (object)func;
+            }
+
+        }
 
         public static string getVariablePath( string path )
         {
@@ -426,19 +540,37 @@ namespace Eagle {
             return Encoding.UTF8.GetString(buffer, 0, buffer.Length);
         }
 
-        public static dynamic getJsonObj(HttpListenerRequest request)
+        public static dynamic getBodyDynamic(HttpListenerRequest request)
         {
 
-            string json = getBody(request);
+            if (request.ContentType == null) 
+                return getBody(request);
 
-            if (json == null || json == "") json = "{}";
+            if (request.ContentType.Contains("application/json") ) {
+                string json = getBody(request);
 
-            json = json.Trim();
+                if (json == null || json == "") json = "{}";
 
-            if (json.StartsWith("["))
-                return JArray.Parse(json);
+                json = json.Trim();
 
-            return JObject.Parse(json);
+                if (json.StartsWith("["))
+                    return JArray.Parse(json);
+
+                return JObject.Parse(json);
+            }
+            if (request.ContentType.Contains("text/plain") ){ 
+                    return getBody(request);
+            }
+            if (request.ContentType.Contains("application/octet-stream") ) {
+                byte[] buffer = new byte[request.ContentLength64];
+                request.InputStream.Read(buffer, 0, buffer.Length);
+                return buffer;
+            }
+            if ("".Equals(request.ContentType)) {
+                return getBody(request);
+            }
+
+            return getBody(request);
         }
 
         public class EagleRequest
